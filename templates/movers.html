@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Movers — GSC Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-arrow-left-right"></i> Movers</h4>
+    <div class="filter-bar d-inline-flex align-items-center gap-2 p-2">
+        <label class="text-muted mb-0">Compare:</label>
+        <select class="form-select form-select-sm" style="width:auto" onchange="location.href='?days='+this.value">
+            <option value="7" {% if days == 7 %}selected{% endif %}>This week vs last</option>
+            <option value="14" {% if days == 14 %}selected{% endif %}>Last 14d vs prior</option>
+            <option value="28" {% if days == 28 %}selected{% endif %}>Last 28d vs prior</option>
+        </select>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Winners -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-arrow-up-circle text-success"></i> Winners ({{ winners|length }})
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Keyword</th>
+                            <th>Site</th>
+                            <th class="text-end">Position</th>
+                            <th class="text-end">Change</th>
+                            <th class="text-end">Clicks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for kw in winners %}
+                        <tr>
+                            <td><strong>{{ kw.keyword }}</strong></td>
+                            <td class="site-url text-muted" style="max-width:150px">{{ kw.site_url }}</td>
+                            <td class="text-end">{{ "%.1f"|format(kw.current_pos) }}</td>
+                            <td class="text-end">
+                                <span class="badge badge-up">▲ {{ "%.1f"|format(kw.pos_change) }}</span>
+                            </td>
+                            <td class="text-end">
+                                {{ kw.current_clicks }}
+                                {% if kw.click_change > 0 %}
+                                    <small class="text-success">(+{{ kw.click_change }})</small>
+                                {% elif kw.click_change < 0 %}
+                                    <small class="text-danger">({{ kw.click_change }})</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Losers -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-arrow-down-circle text-danger"></i> Losers ({{ losers|length }})
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Keyword</th>
+                            <th>Site</th>
+                            <th class="text-end">Position</th>
+                            <th class="text-end">Change</th>
+                            <th class="text-end">Clicks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for kw in losers %}
+                        <tr>
+                            <td><strong>{{ kw.keyword }}</strong></td>
+                            <td class="site-url text-muted" style="max-width:150px">{{ kw.site_url }}</td>
+                            <td class="text-end">{{ "%.1f"|format(kw.current_pos) }}</td>
+                            <td class="text-end">
+                                <span class="badge badge-down">▼ {{ "%.1f"|format(kw.pos_change|abs) }}</span>
+                            </td>
+                            <td class="text-end">
+                                {{ kw.current_clicks }}
+                                {% if kw.click_change > 0 %}
+                                    <small class="text-success">(+{{ kw.click_change }})</small>
+                                {% elif kw.click_change < 0 %}
+                                    <small class="text-danger">({{ kw.click_change }})</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

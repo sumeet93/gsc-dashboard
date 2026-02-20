@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Opportunities — GSC Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-bullseye"></i> Opportunities <span class="text-muted fs-6">(Position {{ min_pos|int }}-{{ max_pos|int }})</span></h4>
+    <div class="filter-bar d-inline-flex align-items-center gap-2 p-2">
+        <label class="text-muted mb-0">Period:</label>
+        <select class="form-select form-select-sm" style="width:auto" onchange="location.href='?days='+this.value+'&min_pos={{ min_pos }}&max_pos={{ max_pos }}'">
+            <option value="7" {% if days == 7 %}selected{% endif %}>7 days</option>
+            <option value="28" {% if days == 28 %}selected{% endif %}>28 days</option>
+            <option value="90" {% if days == 90 %}selected{% endif %}>90 days</option>
+        </select>
+    </div>
+</div>
+
+<p class="text-muted mb-3">These keywords are ranking just outside page 1. One content update, internal link, or backlink could push them onto page 1.</p>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>{{ keywords|length }} opportunities found</span>
+        <input type="text" class="form-control form-control-sm" style="width:250px" placeholder="Filter keywords..." id="kwFilter" oninput="filterTable('kwFilter','kwTable')">
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0" id="kwTable">
+            <thead>
+                <tr>
+                    <th>Keyword</th>
+                    <th>Site</th>
+                    <th>Page</th>
+                    <th class="text-end">Impressions</th>
+                    <th class="text-end">Clicks</th>
+                    <th class="text-end">CTR</th>
+                    <th class="text-end">Avg Position</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for kw in keywords %}
+                <tr>
+                    <td><strong>{{ kw.keyword }}</strong></td>
+                    <td class="site-url text-muted">{{ kw.site_url }}</td>
+                    <td class="site-url text-muted">{{ kw.page }}</td>
+                    <td class="text-end">{{ "{:,}".format(kw.impressions) }}</td>
+                    <td class="text-end">{{ "{:,}".format(kw.clicks) }}</td>
+                    <td class="text-end">{{ "%.1f%%"|format(kw.ctr * 100) }}</td>
+                    <td class="text-end">
+                        <span class="badge bg-warning text-dark">{{ "%.1f"|format(kw.avg_position) }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function filterTable(inputId, tableId) {
+    const filter = document.getElementById(inputId).value.toLowerCase();
+    const rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

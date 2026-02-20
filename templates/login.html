@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — GSC Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #0d1117; color: #c9d1d9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .login-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 2.5rem; width: 100%; max-width: 400px; }
+        .login-card h2 { color: #58a6ff; margin-bottom: 1.5rem; }
+        .form-control { background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; }
+        .form-control:focus { background: #0d1117; color: #c9d1d9; border-color: #58a6ff; box-shadow: 0 0 0 0.2rem rgba(88,166,255,.25); }
+        .btn-primary { background: #238636; border: none; }
+        .btn-primary:hover { background: #2ea043; }
+        .flash-error { background: #da363333; border: 1px solid #da3633; color: #f85149; border-radius: 6px; padding: 0.75rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2><i class="bi bi-graph-up"></i> GSC Dashboard</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+        <form method="POST">
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required autofocus>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+    </div>
+</body>
+</html>

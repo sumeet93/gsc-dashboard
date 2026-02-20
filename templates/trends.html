@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Trends — GSC Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Trends — {{ site_name }}</h4>
+    <div class="filter-bar d-inline-flex align-items-center gap-2 p-2">
+        <label class="text-muted mb-0">Site:</label>
+        <select class="form-select form-select-sm" style="width:300px" onchange="location.href='?site_id='+this.value+'&days={{ days }}'">
+            <option value="">All Sites</option>
+            {% for site in sites %}
+            <option value="{{ site.id }}" {% if selected_site == site.id|string %}selected{% endif %}>{{ site.url }}</option>
+            {% endfor %}
+        </select>
+        <label class="text-muted mb-0 ms-2">Period:</label>
+        <select class="form-select form-select-sm" style="width:auto" onchange="location.href='?site_id={{ selected_site or '' }}&days='+this.value">
+            <option value="30" {% if days == 30 %}selected{% endif %}>30 days</option>
+            <option value="60" {% if days == 60 %}selected{% endif %}>60 days</option>
+            <option value="90" {% if days == 90 %}selected{% endif %}>90 days</option>
+        </select>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card p-3">
+            <h6 class="text-muted mb-3">Clicks & Impressions</h6>
+            <div id="clicksChart"></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card p-3">
+            <h6 class="text-muted mb-3">Average Position & CTR</h6>
+            <div id="positionChart"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const trendData = {{ trend_data|safe }};
+const dates = trendData.map(d => d.query_date);
+const clicks = trendData.map(d => d.total_clicks);
+const impressions = trendData.map(d => d.total_impressions);
+const positions = trendData.map(d => d.avg_position);
+const ctrs = trendData.map(d => (d.avg_ctr * 100).toFixed(2));
+
+const layout = {
+    paper_bgcolor: '#161b22',
+    plot_bgcolor: '#0d1117',
+    font: { color: '#8b949e' },
+    margin: { t: 10, r: 40, b: 40, l: 60 },
+    xaxis: { gridcolor: '#21262d', linecolor: '#30363d' },
+    yaxis: { gridcolor: '#21262d', linecolor: '#30363d' },
+    legend: { orientation: 'h', y: -0.2 },
+    hovermode: 'x unified',
+};
+
+Plotly.newPlot('clicksChart', [
+    { x: dates, y: clicks, name: 'Clicks', type: 'scatter', mode: 'lines', line: { color: '#58a6ff', width: 2 }, fill: 'tozeroy', fillcolor: 'rgba(88,166,255,0.1)' },
+    { x: dates, y: impressions, name: 'Impressions', type: 'scatter', mode: 'lines', line: { color: '#8b949e', width: 1, dash: 'dot' }, yaxis: 'y2' },
+], {
+    ...layout,
+    yaxis: { ...layout.yaxis, title: 'Clicks' },
+    yaxis2: { overlaying: 'y', side: 'right', gridcolor: '#21262d', linecolor: '#30363d', title: 'Impressions' },
+}, { responsive: true });
+
+Plotly.newPlot('positionChart', [
+    { x: dates, y: positions, name: 'Avg Position', type: 'scatter', mode: 'lines', line: { color: '#f0883e', width: 2 } },
+    { x: dates, y: ctrs, name: 'CTR %', type: 'scatter', mode: 'lines', line: { color: '#3fb950', width: 2 }, yaxis: 'y2' },
+], {
+    ...layout,
+    yaxis: { ...layout.yaxis, title: 'Position', autorange: 'reversed' },
+    yaxis2: { overlaying: 'y', side: 'right', gridcolor: '#21262d', linecolor: '#30363d', title: 'CTR %' },
+}, { responsive: true });
+</script>
+{% endblock %}

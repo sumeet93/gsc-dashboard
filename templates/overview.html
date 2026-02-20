@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Overview — GSC Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-grid-3x3-gap"></i> Overview</h4>
+    <div class="filter-bar d-inline-flex align-items-center gap-2 p-2">
+        <label class="text-muted mb-0">Period:</label>
+        <select class="form-select form-select-sm" style="width:auto" onchange="location.href='?days='+this.value">
+            <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
+            <option value="28" {% if days == 28 %}selected{% endif %}>Last 28 days</option>
+            <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+        </select>
+    </div>
+</div>
+
+<!-- Summary cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ "{:,}".format(totals.clicks) }}</div>
+            <div class="stat-label">Total Clicks</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ "{:,}".format(totals.impressions) }}</div>
+            <div class="stat-label">Total Impressions</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ "%.1f%%"|format(totals.ctr * 100) }}</div>
+            <div class="stat-label">Average CTR</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ totals.sites }}</div>
+            <div class="stat-label">Properties</div>
+        </div>
+    </div>
+</div>
+
+<!-- Sites table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-globe"></i> All Properties</span>
+        <input type="text" class="form-control form-control-sm" style="width:250px" placeholder="Filter sites..." id="siteFilter" oninput="filterSites()">
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0" id="sitesTable">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th class="text-end">Clicks</th>
+                    <th class="text-end">Impressions</th>
+                    <th class="text-end">CTR</th>
+                    <th class="text-end">Avg Position</th>
+                    <th class="text-end">Keywords</th>
+                    <th class="text-end">Last Sync</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for site in sites %}
+                <tr>
+                    <td class="site-url">
+                        <a href="{{ url_for('trends', site_id=site.id) }}">{{ site.url }}</a>
+                    </td>
+                    <td class="text-end">{{ "{:,}".format(site.clicks) }}</td>
+                    <td class="text-end">{{ "{:,}".format(site.impressions) }}</td>
+                    <td class="text-end">{{ "%.1f%%"|format(site.ctr * 100) }}</td>
+                    <td class="text-end">{{ "%.1f"|format(site.avg_position) }}</td>
+                    <td class="text-end">{{ "{:,}".format(site.keyword_count) }}</td>
+                    <td class="text-end text-muted">{{ site.last_sync or 'Never' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function filterSites() {
+    const filter = document.getElementById('siteFilter').value.toLowerCase();
+    const rows = document.querySelectorAll('#sitesTable tbody tr');
+    rows.forEach(row => {
+        const url = row.cells[0].textContent.toLowerCase();
+        row.style.display = url.includes(filter) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+flask>=3.0
+google-auth>=2.0
+google-api-python-client>=2.0
+gunicorn>=21.0
+plotly>=5.0
+bcrypt>=4.0
+python-dotenv>=1.0
+apscheduler>=3.10
+pytest>=8.0
+pytest-cov>=4.0
