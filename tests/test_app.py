@@ -109,3 +109,124 @@ class TestAPI:
         assert resp.status_code == 200
         data = resp.get_json()
         assert isinstance(data, list)
+
+
+class TestSyncEndpoints:
+    """Test manual sync trigger endpoints."""
+
+    def test_trigger_sync_requires_login(self, app_client):
+        """Test that trigger_sync requires authentication."""
+        resp = app_client.post("/api/sync", follow_redirects=False)
+        assert resp.status_code == 302  # Redirect to login
+
+    def test_trigger_sync_starts_background_sync(self, logged_in_client, monkeypatch):
+        """Test triggering manual sync with default days."""
+        from unittest.mock import MagicMock
+        
+        mock_full_sync = MagicMock(return_value={
+            "properties_discovered": 2,
+            "sites_synced": 2,
+            "total_rows": 100,
+            "status": "completed",
+            "errors": [],
+        })
+        monkeypatch.setattr("app.full_sync", mock_full_sync)
+
+        # First call should start sync
+        resp = logged_in_client.post(
+            "/api/sync",
+            json={"days": 7},
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["status"] == "started"
+        assert data["days"] == 7
+
+        # Give thread time to complete
+        import time
+        time.sleep(0.2)
+
+        # Verify full_sync was called
+        mock_full_sync.assert_called_once_with(7)
+
+    def test_trigger_sync_custom_days(self, logged_in_client, monkeypatch):
+        """Test triggering sync with custom day count."""
+        from unittest.mock import MagicMock
+        
+        mock_full_sync = MagicMock(return_value={
+            "properties_discovered": 1,
+            "sites_synced": 1,
+            "total_rows": 500,
+            "status": "completed",
+            "errors": [],
+        })
+        monkeypatch.setattr("app.full_sync", mock_full_sync)
+
+        resp = logged_in_client.post(
+            "/api/sync",
+            json={"days": 30},
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["days"] == 30
+
+    def test_trigger_sync_already_running(self, logged_in_client, monkeypatch):
+        """Test that concurrent sync requests are rejected."""
+        from unittest.mock import MagicMock
+        import app as app_module
+        import time
+
+        # Mock a long-running sync
+        def slow_sync(days):
+            time.sleep(0.5)
+            return {
+                "properties_discovered": 1,
+                "sites_synced": 1,
+                "total_rows": 100,
+                "status": "completed",
+                "errors": [],
+            }
+
+        mock_full_sync = MagicMock(side_effect=slow_sync)
+        monkeypatch.setattr("app.full_sync", mock_full_sync)
+
+        # Start first sync
+        resp1 = logged_in_client.post("/api/sync", json={"days": 7})
+        assert resp1.status_code == 200
+
+        # Brief wait to ensure thread starts
+        time.sleep(0.05)
+
+        # Try to start second sync while first is running
+        resp2 = logged_in_client.post("/api/sync", json={"days": 7})
+        assert resp2.status_code == 409  # Conflict
+        data = resp2.get_json()
+        assert data["status"] == "already_running"
+
+        # Wait for first sync to complete
+        time.sleep(0.6)
+
+        # Reset the global flag for other tests
+        app_module._sync_running = False
+
+    def test_trigger_sync_handles_exceptions(self, logged_in_client, monkeypatch):
+        """Test that sync errors are logged but don't crash."""
+        from unittest.mock import MagicMock
+        
+        mock_full_sync = MagicMock(side_effect=Exception("Test error"))
+        monkeypatch.setattr("app.full_sync", mock_full_sync)
+
+        resp = logged_in_client.post("/api/sync", json={"days": 7})
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["status"] == "started"
+
+        # Give thread time to fail
+        import time
+        time.sleep(0.2)
+
+        # The exception should be caught and logged, sync flag should be reset
+        import app as app_module
+        assert app_module._sync_running is False
